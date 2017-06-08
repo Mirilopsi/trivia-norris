@@ -21,6 +21,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../bower_components/paper-listbox/paper-listbox.html">
 <link rel="import" href="../bower_components/neon-animation/neon-animation.html">
 <link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<script src="../bower_components/ramda/dist/ramda.min.js"></script>
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="shared-styles.html">
 
 <dom-module id="my-view1">
@@ -31,27 +33,79 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         padding: 10px;
       }
+      .primary{
+         background: var(--paper-purple-700);
+         color: #fff;
+      }
     </style>
 
+  <iron-ajax
+      auto
+      handle-as="json"
+      on-response="handleResponse"
+      debounce-duration="300"></iron-ajax>
+
     <paper-card>
-      <paper-input type="number" label="Número preguntas" min="1" max="15"></paper-input>
-      
-      <paper-dropdown-menu label="Categorías">
-        <paper-listbox slot="dropdown-content" selected="1">
-          <paper-item>Arte</paper-item>
-          <paper-item>Deporte (Hala Madrid)</paper-item>
-          <paper-item>Mitología</paper-item>
-          <paper-item>Polymer</paper-item>
-        </paper-listbox>
-      </paper-dropdown-menu>
-    
-    <paper-button dialog-confirm autofocus>Generar preguntas</paper-button>
+      <div class="card-content">
+        <div>
+          <paper-input id="amountInput" type="number" label="Número preguntas" value="1" min="1" max="15"></paper-input>
+        </div>
+        <div>
+          <paper-dropdown-menu id="categorySelector" label="Categorías">
+            <paper-listbox slot="dropdown-content" selected="1">
+
+              <template is="dom-repeat" items="{{categories}}" as="category">
+                <paper-item>{{category.name}}</paper-item>
+              </template>
+            </paper-listbox>
+          </paper-dropdown-menu>
+        </div>
+        <div>
+            <paper-button class="primary" dialog-confirm autofocus raised on-tap="getQuestions">Generar preguntas</paper-button>
+        </div>
+        </div>
     </paper-card>
-  </template>
+    </template>
 
     <script>
         Polymer({
             is: 'my-view1',
+            properties: {
+                categories: {
+                    type: Array
+                }
+            },
+            attached: function() {
+
+                this.categories = [{
+                    id: 9,
+                    name: 'General Knowledge'
+                }, {
+                    id: 10,
+                    name: 'Entertainment: Books'
+                }, {
+                    id: 18,
+                    name: 'Science: Computers'
+                }, {
+                    id: 20,
+                    name: 'Mythology'
+                }];
+            },
+            getQuestions: function(){
+
+                const that = this,
+                    categorySelector = that.$.categorySelector,
+                    categoryName = categorySelector.selectedItem.textContent,
+                    category = R.find(R.propEq('name', categoryName))(that.categories),
+                    amount = that.$.amountInput.value,
+                    url = `https://opentdb.com/api.php?amount=${amount}&category=${category.id}`,
+                    ajax = that.root.querySelector('iron-ajax');
+
+                ajax.url = url;
+            },
+            handleResponse: function(response){
+                console.log(response.detail.response.results);
+            }
         });
     </script>
 </dom-module>
